@@ -1,47 +1,11 @@
-# install: pip install flask tensorflow keras pandas shap
-from flask import Flask, request, jsonify
-import os
-import tempfile
-import tensorflow as tf
-import shap
-import numpy as np
+import numpy as np, matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-app = Flask(__name__)
+X=np.random.rand(100,1); y=2+3*X+np.random.randn(100,1)
+plt.scatter(X,y); plt.title("Scatter plot of X vs y"); plt.xlabel("X"); plt.ylabel("y"); plt.show()
 
-@app.route('/analyze', methods=['POST'])
-def analyze_model():
-    file = request.files['model']
-    temp_path = tempfile.mktemp(suffix='.h5')
-    file.save(temp_path)
+print("Correlation coefficient between X and y:",np.corrcoef(X[:,0],y[:,0])[0,1])
+model=LinearRegression().fit(X,y); print("Intercept:",model.intercept_[0]); print("Slope:",model.coef_[0][0])
 
-    try:
-        model = tf.keras.models.load_model(temp_path)
-        explain_score = check_explainability(model)
-        bias_score = check_bias(model)
-        privacy_score = check_privacy(model)
-
-        result = {
-            "bias_risk": bias_score,
-            "explainability": explain_score,
-            "privacy_score": privacy_score,
-            "gdpr_compliant": privacy_score > 70,
-            "hipaa_compliant": privacy_score > 80
-        }
-
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-def check_explainability(model):
-    return "SHAP Compatible" if isinstance(model, tf.keras.Model) else "Not explainable"
-
-def check_bias(model):
-    # Placeholder: real bias check needs training data and labels
-    return "Medium Risk (requires dataset inspection)"
-
-def check_privacy(model):
-    size = model.count_params()
-    return max(30, min(100, 100 - (size // 100000)))  # simple heuristic
-
-if __name__ == '__main__':
-    app.run(debug=True)
+plt.scatter(X,y); plt.plot(X,model.predict(X),color='red')
+plt.title("Linear regression model"); plt.xlabel("X"); plt.ylabel("y"); plt.show()
